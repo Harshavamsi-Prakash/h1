@@ -10,10 +10,37 @@ API_KEY = "e0100edeedd99f5ae298581c486626a4"
 
 # List of cities (you can expand this list or load from a CSV file)
 CITIES = [
-    "New York, USA", "London, UK", "Tokyo, Japan", "Paris, France", "Berlin, Germany",
-    "Mumbai, India", "Sydney, Australia", "Beijing, China", "Moscow, Russia", "Cairo, Egypt",
-    "São Paulo, Brazil", "Toronto, Canada", "Dubai, UAE", "Singapore", "Mexico City, Mexico"
+    "New York, US", "London, GB", "Tokyo, JP", "Paris, FR", "Berlin, DE",
+    "Mumbai, IN", "Sydney, AU", "Beijing, CN", "Moscow, RU", "Cairo, EG",
+    "São Paulo, BR", "Toronto, CA", "Dubai, AE", "Singapore, SG", "Mexico City, MX",
+    "Los Angeles, US", "Chicago, US", "Houston, US", "Phoenix, US", "Philadelphia, US",
+    "San Francisco, US", "Miami, US", "Shanghai, CN", "Delhi, IN", "Bangkok, TH",
+    "Istanbul, TR", "Karachi, PK", "Dhaka, BD", "Rio de Janeiro, BR", "Jakarta, ID",
+    "Lagos, NG", "Kolkata, IN", "Manila, PH", "Seoul, KR", "Kinshasa, CD",
+    "Lima, PE", "Bogotá, CO", "Hong Kong, HK", "Madrid, ES", "Barcelona, ES",
+    "Rome, IT", "Milan, IT", "Amsterdam, NL", "Brussels, BE", "Vienna, AT",
+    "Prague, CZ", "Warsaw, PL", "Budapest, HU", "Athens, GR", "Lisbon, PT",
+    "Stockholm, SE", "Copenhagen, DK", "Helsinki, FI", "Oslo, NO", "Zurich, CH",
+    "Geneva, CH", "Dublin, IE", "Edinburgh, GB", "Manchester, GB", "Birmingham, GB",
+    "Glasgow, GB", "Melbourne, AU", "Brisbane, AU", "Perth, AU", "Auckland, NZ",
+    "Wellington, NZ", "Johannesburg, ZA", "Cape Town, ZA", "Nairobi, KE", "Casablanca, MA",
+    "Riyadh, SA", "Doha, QA", "Kuwait City, KW", "Muscat, OM", "Abu Dhabi, AE",
+    "Tel Aviv, IL", "Jerusalem, IL", "Baghdad, IQ", "Tehran, IR", "Kabul, AF",
+    "Islamabad, PK", "Colombo, LK", "Kathmandu, NP", "Dhaka, BD", "Yangon, MM",
+    "Hanoi, VN", "Ho Chi Minh City, VN", "Bangkok, TH", "Kuala Lumpur, MY",
+    "Manila, PH", "Phnom Penh, KH", "Vientiane, LA", "Ulaanbaatar, MN", "Seoul, KR",
+    "Pyongyang, KP", "Tokyo, JP", "Osaka, JP", "Kyoto, JP", "Nagoya, JP",
+    "Sapporo, JP", "Fukuoka, JP", "Hiroshima, JP", "Sendai, JP", "Yokohama, JP",
+    "Beijing, CN", "Shanghai, CN", "Guangzhou, CN", "Shenzhen, CN", "Chengdu, CN",
+    "Chongqing, CN", "Tianjin, CN", "Wuhan, CN", "Nanjing, CN", "Hangzhou, CN",
+    "Xi'an, CN", "Shenyang, CN", "Harbin, CN", "Hong Kong, HK", "Macau, MO",
+    "Taipei, TW", "Kaohsiung, TW", "Taichung, TW", "Tainan, TW", "New Taipei, TW",
+    "Seoul, KR", "Busan, KR", "Incheon, KR", "Daegu, KR", "Daejeon, KR",
+    "Gwangju, KR", "Ulsan, KR", "Suwon, KR", "Changwon, KR", "Seongnam, KR",
+    "Tokyo, JP", "Osaka, JP", "Nagoya, JP", "Sapporo, JP", "Fukuoka, JP",
+    "Kobe, JP", "Kyoto, JP", "Yokohama, JP", "Kawasaki, JP", "Saitama, JP"
 ]
+
 
 # Function to get coordinates from city name using OpenWeatherMap
 def get_coordinates(city_name):
