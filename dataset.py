@@ -24,15 +24,15 @@ def get_coordinates(city_name):
 
 # Function to get weather data from OpenWeatherMap
 def get_weather_data(lat, lon, hours):
-    url = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&exclude=minutely,daily&appid={API_KEY}&units=metric"
+    url = f"http://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={API_KEY}&units=metric"
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
         # Extract hourly data for the next `hours` hours
-        hourly_data = data['hourly'][:hours]
+        hourly_data = data['list'][:hours]
         return hourly_data
     else:
-        st.error("Failed to retrieve data")
+        st.error(f"Failed to retrieve data: {response.status_code} - {response.text}")
         return None
 
 # Streamlit UI for downloading dataset
@@ -46,16 +46,16 @@ def download_dataset():
         if lat and lon:
             data = get_weather_data(lat, lon, forecast_duration)
             if data:
-                times = [datetime.now() + timedelta(hours=i) for i in range(forecast_duration)]
+                times = [datetime.fromtimestamp(hour['dt']) for hour in data]
                 df = pd.DataFrame({
                     "Time": times,
-                    "temperature": [hour['temp'] for hour in data],
-                    "humidity": [hour['humidity'] for hour in data],
-                    "pressure": [hour['pressure'] for hour in data],
-                    "precipitation": [hour.get('rain', {}).get('1h', 0) for hour in data],  # Precipitation (rain)
-                    "cloud_cover": [hour['clouds'] for hour in data],
-                    "wind_speed": [hour['wind_speed'] for hour in data],
-                    "wind_direction": [hour['wind_deg'] for hour in data]
+                    "temperature": [hour['main']['temp'] for hour in data],
+                    "humidity": [hour['main']['humidity'] for hour in data],
+                    "pressure": [hour['main']['pressure'] for hour in data],
+                    "precipitation": [hour.get('rain', {}).get('3h', 0) for hour in data],  # Precipitation (rain) in 3h intervals
+                    "cloud_cover": [hour['clouds']['all'] for hour in data],
+                    "wind_speed": [hour['wind']['speed'] for hour in data],
+                    "wind_direction": [hour['wind']['deg'] for hour in data]
                 })
                 st.write(df)
                 st.download_button(
