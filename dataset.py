@@ -132,9 +132,9 @@ import time
 import os
 
 # OpenWeatherMap API Key
-API_KEY = "e0100edeedd99f5ae298581c486626a4"
+API_KEY = "e0100edeedd99f5ae298581c486626a4"  # Replace with your actual API key
 
-# List of cities (top 100 cities worldwide)
+# Expanded list of cities with correct naming and supported by OpenWeatherMap API
 CITIES = [
     "New York, US", "London, GB", "Tokyo, JP", "Paris, FR", "Berlin, DE",
     "Mumbai, IN", "Sydney, AU", "Beijing, CN", "Moscow, RU", "Cairo, EG",
@@ -156,7 +156,15 @@ CITIES = [
     "Hanoi, VN", "Ho Chi Minh City, VN", "Bangkok, TH", "Kuala Lumpur, MY",
     "Manila, PH", "Phnom Penh, KH", "Vientiane, LA", "Ulaanbaatar, MN", "Seoul, KR",
     "Pyongyang, KP", "Tokyo, JP", "Osaka, JP", "Kyoto, JP", "Nagoya, JP",
-    "Sapporo, JP", "Fukuoka, JP", "Hiroshima, JP", "Sendai, JP", "Yokohama, JP"
+    "Sapporo, JP", "Fukuoka, JP", "Hiroshima, JP", "Sendai, JP", "Yokohama, JP",
+    "Beijing, CN", "Shanghai, CN", "Guangzhou, CN", "Shenzhen, CN", "Chengdu, CN",
+    "Chongqing, CN", "Tianjin, CN", "Wuhan, CN", "Nanjing, CN", "Hangzhou, CN",
+    "Xi'an, CN", "Shenyang, CN", "Harbin, CN", "Hong Kong, HK", "Macau, MO",
+    "Taipei, TW", "Kaohsiung, TW", "Taichung, TW", "Tainan, TW", "New Taipei, TW",
+    "Seoul, KR", "Busan, KR", "Incheon, KR", "Daegu, KR", "Daejeon, KR",
+    "Gwangju, KR", "Ulsan, KR", "Suwon, KR", "Changwon, KR", "Seongnam, KR",
+    "Tokyo, JP", "Osaka, JP", "Nagoya, JP", "Sapporo, JP", "Fukuoka, JP",
+    "Kobe, JP", "Kyoto, JP", "Yokohama, JP", "Kawasaki, JP", "Saitama, JP"
 ]
 
 # Function to get coordinates from city name using OpenWeatherMap
@@ -175,13 +183,13 @@ def get_coordinates(city_name):
         st.error(f"API request failed with status code {response.status_code}: {response.text}")
         return None, None
 
-# Function to get historical weather data from OpenWeatherMap
-def get_historical_weather_data(lat, lon, start_date, end_date):
-    url = f"http://api.openweathermap.org/data/2.5/onecall/timemachine?lat={lat}&lon={lon}&dt={start_date}&appid={API_KEY}&units=metric"
+# Function to get weather data from OpenWeatherMap
+def get_weather_data(lat, lon):
+    url = f"http://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={API_KEY}&units=metric"
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
-        return data['hourly']
+        return data['list']  # Returns 5-day forecast in 3-hour intervals
     else:
         st.error(f"Failed to retrieve data for lat={lat}, lon={lon}: {response.status_code} - {response.text}")
         return None
@@ -198,17 +206,7 @@ def save_data_to_csv(data, filename="large_weather_dataset.csv"):
 # Streamlit UI for downloading dataset
 def download_large_dataset():
     st.title("Build Large Weather Dataset")
-    st.write("This tool fetches historical weather data for the top 100 cities to build a large dataset for machine learning.")
-    st.write("The dataset will include the following parameters for each city:")
-    st.write("- City Name")
-    st.write("- Timestamp")
-    st.write("- Temperature (°C)")
-    st.write("- Humidity (%)")
-    st.write("- Pressure (hPa)")
-    st.write("- Precipitation (mm)")
-    st.write("- Cloud Cover (%)")
-    st.write("- Wind Speed (m/s)")
-    st.write("- Wind Direction (°)")
+    st.write("This tool fetches weather data for multiple cities to build a large dataset for machine learning.")
 
     if st.button("Start Building Dataset"):
         progress_bar = st.progress(0)
@@ -216,27 +214,23 @@ def download_large_dataset():
         total_cities = len(CITIES)
         all_data = []
 
-        # Define the date range for historical data (e.g., last 5 years)
-        end_date = int(datetime.now().timestamp())
-        start_date = int((datetime.now() - timedelta(days=365 * 5)).timestamp())
-
         for i, city in enumerate(CITIES):
             status_text.text(f"Fetching data for {city} ({i + 1}/{total_cities})...")
             lat, lon = get_coordinates(city)
             if lat and lon:
-                historical_data = get_historical_weather_data(lat, lon, start_date, end_date)
-                if historical_data:
-                    for hour in historical_data:
+                weather_data = get_weather_data(lat, lon)
+                if weather_data:
+                    for hour in weather_data:
                         all_data.append({
                             "city": city,
                             "time": datetime.fromtimestamp(hour['dt']),
-                            "temperature": hour['temp'],
-                            "humidity": hour['humidity'],
-                            "pressure": hour['pressure'],
-                            "precipitation": hour.get('rain', {}).get('1h', 0),  # Precipitation in mm
-                            "cloud_cover": hour['clouds'],
-                            "wind_speed": hour['wind_speed'],
-                            "wind_direction": hour['wind_deg']
+                            "temperature": hour['main']['temp'],
+                            "humidity": hour['main']['humidity'],
+                            "pressure": hour['main']['pressure'],
+                            "precipitation": hour.get('rain', {}).get('3h', 0),  # Precipitation in mm
+                            "cloud_cover": hour['clouds']['all'],  # Cloud cover in %
+                            "wind_speed": hour['wind']['speed'],  # Wind speed in m/s
+                            "wind_direction": hour['wind']['deg']  # Wind direction in degrees
                         })
             progress_bar.progress((i + 1) / total_cities)
             time.sleep(1)  # Add delay to avoid hitting API rate limits
@@ -253,7 +247,6 @@ def download_large_dataset():
 
 if __name__ == "__main__":
     download_large_dataset()
-
 
 
 
