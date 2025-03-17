@@ -130,9 +130,35 @@ import streamlit as st
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
+import time
 
 # OpenWeatherMap API Key
 API_KEY = "e0100edeedd99f5ae298581c486626a4"
+
+# List of top 100 cities worldwide
+CITIES = [
+    "New York, US", "London, GB", "Tokyo, JP", "Paris, FR", "Berlin, DE",
+    "Mumbai, IN", "Sydney, AU", "Beijing, CN", "Moscow, RU", "Cairo, EG",
+    "São Paulo, BR", "Toronto, CA", "Dubai, AE", "Singapore, SG", "Mexico City, MX",
+    "Los Angeles, US", "Chicago, US", "Houston, US", "Phoenix, US", "Philadelphia, US",
+    "San Francisco, US", "Miami, US", "Shanghai, CN", "Delhi, IN", "Bangkok, TH",
+    "Istanbul, TR", "Karachi, PK", "Dhaka, BD", "Rio de Janeiro, BR", "Jakarta, ID",
+    "Lagos, NG", "Kolkata, IN", "Manila, PH", "Seoul, KR", "Kinshasa, CD",
+    "Lima, PE", "Bogotá, CO", "Hong Kong, HK", "Madrid, ES", "Barcelona, ES",
+    "Rome, IT", "Milan, IT", "Amsterdam, NL", "Brussels, BE", "Vienna, AT",
+    "Prague, CZ", "Warsaw, PL", "Budapest, HU", "Athens, GR", "Lisbon, PT",
+    "Stockholm, SE", "Copenhagen, DK", "Helsinki, FI", "Oslo, NO", "Zurich, CH",
+    "Geneva, CH", "Dublin, IE", "Edinburgh, GB", "Manchester, GB", "Birmingham, GB",
+    "Glasgow, GB", "Melbourne, AU", "Brisbane, AU", "Perth, AU", "Auckland, NZ",
+    "Wellington, NZ", "Johannesburg, ZA", "Cape Town, ZA", "Nairobi, KE", "Casablanca, MA",
+    "Riyadh, SA", "Doha, QA", "Kuwait City, KW", "Muscat, OM", "Abu Dhabi, AE",
+    "Tel Aviv, IL", "Jerusalem, IL", "Baghdad, IQ", "Tehran, IR", "Kabul, AF",
+    "Islamabad, PK", "Colombo, LK", "Kathmandu, NP", "Dhaka, BD", "Yangon, MM",
+    "Hanoi, VN", "Ho Chi Minh City, VN", "Bangkok, TH", "Kuala Lumpur, MY",
+    "Manila, PH", "Phnom Penh, KH", "Vientiane, LA", "Ulaanbaatar, MN", "Seoul, KR",
+    "Pyongyang, KP", "Tokyo, JP", "Osaka, JP", "Kyoto, JP", "Nagoya, JP",
+    "Sapporo, JP", "Fukuoka, JP", "Hiroshima, JP", "Sendai, JP", "Yokohama, JP"
+]
 
 # Function to get coordinates from city name using OpenWeatherMap
 def get_coordinates(city_name):
@@ -150,50 +176,65 @@ def get_coordinates(city_name):
         st.error(f"API request failed with status code {response.status_code}: {response.text}")
         return None, None
 
-# Function to get weather data from OpenWeatherMap
-def get_weather_data(lat, lon):
-    url = f"http://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={API_KEY}&units=metric"
+# Function to get historical weather data from OpenWeatherMap
+def get_historical_weather_data(lat, lon, start_date, end_date):
+    url = f"http://api.openweathermap.org/data/2.5/onecall/timemachine?lat={lat}&lon={lon}&dt={start_date}&appid={API_KEY}&units=metric"
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
-        return data['list']  # Returns 5-day forecast in 3-hour intervals
+        return data['hourly']
     else:
         st.error(f"Failed to retrieve data for lat={lat}, lon={lon}: {response.status_code} - {response.text}")
         return None
 
 # Streamlit UI for downloading dataset
 def download_dataset():
-    st.title("Download Weather Dataset")
-    city_name = st.text_input("Enter City Name")
-    forecast_duration = st.slider("Select Forecast Duration (Hours)", min_value=12, max_value=48, value=24, step=12)
+    st.title("Build Large Weather Dataset")
+    st.write("This tool fetches historical weather data for the top 100 cities to build a large dataset for machine learning.")
 
-    if st.button("Get Weather Data"):
-        lat, lon = get_coordinates(city_name)
-        if lat and lon:
-            weather_data = get_weather_data(lat, lon)
-            if weather_data:
-                times = [datetime.fromtimestamp(hour['dt']) for hour in weather_data[:forecast_duration]]
-                df = pd.DataFrame({
-                    "Time": times,
-                    "temperature": [hour['main']['temp'] for hour in weather_data[:forecast_duration]],
-                    "humidity": [hour['main']['humidity'] for hour in weather_data[:forecast_duration]],
-                    "pressure": [hour['main']['pressure'] for hour in weather_data[:forecast_duration]],
-                    "precipitation": [hour.get('rain', {}).get('3h', 0) for hour in weather_data[:forecast_duration]],
-                    "cloud_cover": [hour['clouds']['all'] for hour in weather_data[:forecast_duration]],
-                    "wind_speed": [hour['wind']['speed'] for hour in weather_data[:forecast_duration]],
-                    "wind_direction": [hour['wind']['deg'] for hour in weather_data[:forecast_duration]],
-                    "visibility": [hour.get('visibility', 0) for hour in weather_data[:forecast_duration]],  # Visibility in meters
-                    "dew_point": [hour.get('dew_point', 0) for hour in weather_data[:forecast_duration]],  # Dew point in Celsius
-                    "uvi": [hour.get('uvi', 0) for hour in weather_data[:forecast_duration]],  # UV index
-                    "wind_gust": [hour['wind'].get('gust', 0) for hour in weather_data[:forecast_duration]]  # Wind gust speed
-                })
-                st.write(df)
-                st.download_button(
-                    label="Download Dataset as CSV",
-                    data=df.to_csv(index=False).encode('utf-8'),
-                    file_name="weather_data.csv",
-                    mime="text/csv"
-                )
+    if st.button("Start Building Dataset"):
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        total_cities = len(CITIES)
+        all_data = []
+
+        # Define the date range for historical data (e.g., last 5 years)
+        end_date = int(datetime.now().timestamp())
+        start_date = int((datetime.now() - timedelta(days=365 * 5)).timestamp())
+
+        for i, city in enumerate(CITIES):
+            status_text.text(f"Fetching data for {city} ({i + 1}/{total_cities})...")
+            lat, lon = get_coordinates(city)
+            if lat and lon:
+                historical_data = get_historical_weather_data(lat, lon, start_date, end_date)
+                if historical_data:
+                    for hour in historical_data:
+                        all_data.append({
+                            "city": city,
+                            "time": datetime.fromtimestamp(hour['dt']),
+                            "temperature": hour['temp'],
+                            "humidity": hour['humidity'],
+                            "pressure": hour['pressure'],
+                            "wind_speed": hour['wind_speed'],
+                            "wind_direction": hour['wind_deg'],
+                            "cloud_cover": hour['clouds'],
+                            "visibility": hour.get('visibility', 0),
+                            "dew_point": hour.get('dew_point', 0),
+                            "wind_gust": hour.get('wind_gust', 0)
+                        })
+            progress_bar.progress((i + 1) / total_cities)
+            time.sleep(1)  # Add delay to avoid hitting API rate limits
+
+        # Save data to CSV
+        df = pd.DataFrame(all_data)
+        df.to_csv("large_weather_dataset.csv", index=False)
+        st.success(f"Dataset created successfully! Total records: {len(all_data)}")
+        st.download_button(
+            label="Download Dataset as CSV",
+            data=df.to_csv(index=False).encode('utf-8'),
+            file_name="large_weather_dataset.csv",
+            mime="text/csv"
+        )
 
 if __name__ == "__main__":
     download_dataset()
